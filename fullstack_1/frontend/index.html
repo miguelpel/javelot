@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="main.css">
 </head>
 <body>
   <div id="root"></div>
@@ -11,13 +12,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.0/redux.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-redux/5.0.7/react-redux.js"></script>
-
-  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/react-chartjs/1.2.0/react-chartjs.min.js"></script> -->
-
+  <!-- CHART LIBRARY -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.js"></script>
-
-  <!-- <script src="https://unpkg.com/react-vis@1.6.7/dist/dist.min.js"></script> -->
-
+  
   <script type="text/babel">
     const OBJECTIVES = [
       { "id": 1, "title": "First objective", "start": 0, "target": 50, "current": 20, "start_date": "2018-01-05", "end_date": "2018-03-05" },
@@ -30,6 +27,116 @@
 
 
     // PUT YOUR CODE HERE AND MODIFY App
+
+    class SideMenu extends React.Component {
+      constructor(props) {
+        super(props)
+        this.state = {
+          titles: []
+        }
+      }
+
+      createTitles = () => {
+        let title = OBJECTIVES[0].title
+        let id = OBJECTIVES[0].id
+        
+        const getChildren = (id) => {
+          const children = OBJECTIVES.filter(data => (data.parent_id && data.parent_id === id))
+          if (children.length > 1) {
+            let elements = []
+            children.forEach(child => {
+              elements.push(<MenuTitle
+                              key={child.id}
+                              select={this.props.changeCardTo}
+                              id={child.id}
+                              title={child.title}
+                              children={getChildren(child.id)}
+                            />)
+            })
+            return [...elements]
+          } else if (children.length > 0) {
+            return <MenuTitle
+                      key={children[0].id}
+                      select={this.props.changeCardTo}
+                      id={children[0].id}
+                      title={children[0].title}
+                      children={getChildren(children[0].id)}
+                    />
+          }
+          return
+        }
+        let titles = <MenuTitle
+                        key={id}
+                        select={this.props.changeCardTo}
+                        id={id}
+                        title={title}
+                        children={getChildren(id)}
+                      />
+
+        this.setState({
+          titles: titles
+        })
+      }
+
+      componentDidMount() {
+        this.createTitles()
+      }
+
+      render() {
+        return(
+          <div id="side_menu">
+            {this.state.titles}
+          </div>
+        )
+      }
+    }
+
+    class MenuTitle extends React.Component {
+        constructor(props){
+          super(props)
+          this.state = {
+            selected:false,
+            visible:false,
+            nextOptions:this.props.children
+          }
+        }
+
+        toggleHide(evt) {
+          this.props.select(this.props.id)
+          this.setState({
+            visible:!this.state.visible
+          })
+          evt.stopPropagation();
+        }
+
+        render(){
+          let title
+          if (this.state.nextOptions) {
+            title = <div className="title">
+                      <Arrow direction={this.state.visible ? "down" : "right"}/>
+                      <span>{this.props.title}</span>
+                    </div>
+          } else {
+            title = <div className="title">
+                      <span>{this.props.title}</span>
+                    </div>
+          }
+
+          return(
+            <div className="menu_title" onClick={(evt) => this.toggleHide(evt)}>
+              {title}
+              {this.state.visible && this.state.nextOptions}
+            </div>
+          )
+        }
+        
+    }
+
+    const Arrow = (props) => {
+      return(
+        <div className={props.direction === "down" ? "arrow-down" : "arrow-right"}></div>
+      )
+    }
 
     const Results = () => {
       let objectivesAboveTarget = () => {
@@ -47,31 +154,20 @@
       )
     }
 
-    const Cards = () => {
-      const createCards = () => {
-        let cards = []
-        let today = TODAY
-        OBJECTIVES.forEach(element => {      
-          cards.push(<div key={element.id}>
-                        <Grafic
-                          label={element.title}
-                          startDate={element.start_date}
-                          endDate={element.end_date}
-                          today={today}
-                          start={element.start}
-                          objective={element.target}
-                          current={element.current}
-                        />
-                        <br />
-                      </div>) 
-        });
-        return cards
-        ///
-      }
-      
+    const Cards = (props) => {
+      const data = OBJECTIVES.find(item => item.id === props.nbr);
+      const today = TODAY;
       return(
-        <div>
-          {createCards()}
+        <div key={data.id}>
+          <Grafic
+            label={data.title}
+            startDate={data.start_date}
+            endDate={data.end_date}
+            today={today}
+            start={data.start}
+            objective={data.target}
+            current={data.current}
+          />
         </div>
       )
     }
@@ -102,6 +198,7 @@
         });
 
       }
+
       render() {
         return(
           <div>
@@ -111,13 +208,36 @@
       }
     }
 
-    const App = () => {
-      return(
-        <div>
-          <Results />
-          <Cards />
-        </div>
-      )
+    class App extends React.Component {
+      constructor(props){
+        super(props);
+        this.state = {
+          cardNbr: 1
+        }
+      }
+
+      setCardNbr(nbr) {
+        console.log(nbr)
+        this.setState({
+          cardNbr: nbr
+        })
+      }
+
+      render() {
+        return(
+          <div id="app">
+            <SideMenu
+              changeCardTo={(nbr) => this.setCardNbr(nbr)}
+              selectedNbr={this.state.cardNbr}
+            />
+            <div id="app_body">
+              <Results />
+              <Cards nbr={this.state.cardNbr}/>
+            </div>
+          </div>
+        )
+      }
+
     }
       
 
