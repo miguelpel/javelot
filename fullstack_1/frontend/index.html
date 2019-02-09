@@ -12,6 +12,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.0/redux.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-redux/5.0.7/react-redux.js"></script>
 
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/react-chartjs/1.2.0/react-chartjs.min.js"></script> -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.js"></script>
+
+  <!-- <script src="https://unpkg.com/react-vis@1.6.7/dist/dist.min.js"></script> -->
+
   <script type="text/babel">
     const OBJECTIVES = [
       { "id": 1, "title": "First objective", "start": 0, "target": 50, "current": 20, "start_date": "2018-01-05", "end_date": "2018-03-05" },
@@ -25,9 +31,95 @@
 
     // PUT YOUR CODE HERE AND MODIFY App
 
-    const App = () =>
-      <div>CHALLENGE JAVELO</div>
+    const Results = () => {
+      let objectivesAboveTarget = () => {
+        let total = 0
+        OBJECTIVES.forEach(element => {
+          if (element.current > element.target) {
+            total += 1
+          }        
+        });
+        return total
+      }
 
+      return(
+        <h2>{objectivesAboveTarget()} objectives have their current value over their target</h2>
+      )
+    }
+
+    const Cards = () => {
+      const createCards = () => {
+        let cards = []
+        let today = TODAY
+        OBJECTIVES.forEach(element => {      
+          cards.push(<div key={element.id}>
+                        <Grafic
+                          label={element.title}
+                          startDate={element.start_date}
+                          endDate={element.end_date}
+                          today={today}
+                          start={element.start}
+                          objective={element.target}
+                          current={element.current}
+                        />
+                        <br />
+                      </div>) 
+        });
+        return cards
+        ///
+      }
+      
+      return(
+        <div>
+          {createCards()}
+        </div>
+      )
+    }
+
+    class Grafic extends React.Component {
+      componentDidMount() {
+        const canvas = this.refs.canvas
+        const ctx = canvas.getContext("2d")
+
+        let chart = new Chart(ctx, {
+          // The type of chart
+          type: 'line',
+
+          // The data 
+          data: {
+              labels: [`start: ${this.props.startDate}`, `today: ${this.props.today}`, `end: ${this.props.endDate}`],
+              datasets: [{
+                  label: this.props.label,
+                  fill: false,
+                  borderColor: 'rgb(238, 182, 24)',
+                  backgroundColor: 'rgb(238, 182, 24)',
+                  data: [this.props.start, this.props.current, this.props.objective],
+              }]
+          },
+
+          // Configuration options
+          options: {}
+        });
+
+      }
+      render() {
+        return(
+          <div>
+            <canvas ref="canvas" width={400} height={225} />
+          </div>
+        )
+      }
+    }
+
+    const App = () => {
+      return(
+        <div>
+          <Results />
+          <Cards />
+        </div>
+      )
+    }
+      
 
     ReactDOM.render(
       <App/>,
