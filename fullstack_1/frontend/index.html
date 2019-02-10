@@ -16,6 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.js"></script>
   
   <script type="text/babel">
+    /////////// DATA
     const OBJECTIVES = [
       { "id": 1, "title": "First objective", "start": 0, "target": 50, "current": 20, "start_date": "2018-01-05", "end_date": "2018-03-05" },
       { "id": 2, "title": "Second objective", "start": 10, "target": 42, "current": 20, "start_date": "2018-01-25", "end_date": "2018-03-30", "parent_id": 1 },
@@ -25,9 +26,78 @@
     ];
     const TODAY = "2018-02-20";
 
+    /////////// REDUCER
 
-    // PUT YOUR CODE HERE AND MODIFY App
+    const initialState = () => {
+      const data = OBJECTIVES
+        const today = TODAY
+        data.forEach(dataSet => {
+          dataSet.originTarget = dataSet.target
+        })
+        return {
+          data: data,
+          today: today,
+          pageNbr: 1
+        }
+    }
 
+    const reducer = (state = initialState(), action) => {
+        let newData = [...state.data]
+        let newPageNbr = state.pageNbr
+        let dataSetNbr = undefined
+        switch (action.type) {
+          case "set page":
+            newPageNbr = action.payload
+            break
+          case "increase":
+            console.log("increase target: " + action.payload)
+            dataSetNbr = action.payload
+            break
+          case "increaseRandom":
+            dataSetNbr = Math.floor((Math.random() * newData.length) + 1);
+            console.log('increase random target: ' + dataSetNbr)
+            break
+          default:
+            return state;
+        }
+        if (dataSetNbr) {
+          newData.find(dataSet => dataSet.id === dataSetNbr).target += 1
+        }
+        return {
+                  data: newData,
+                  today: state.today,
+                  pageNbr: newPageNbr,
+                }
+    }
+
+    /////////// REDUX ACTION CREATORS
+    const increaseTarget = (dataSetNbr) => {
+      return {
+        type: "increase",
+        payload: dataSetNbr
+      }
+    }
+
+    const increaseRandomTarget = () => {
+      return {
+        type: "increaseRandom"
+      }
+    }
+
+    const setPage = (pageNbr) => {
+      console.log('--> change Page to: ' + pageNbr)
+      return {
+        type: "set page",
+        payload: pageNbr
+      }
+    }
+
+    /////////// REDUX 
+    const store = Redux.createStore(reducer);
+    const Provider = ReactRedux.Provider
+    const connect = ReactRedux.connect
+
+    /////////// COMPONENTS
     class SideMenu extends React.Component {
       constructor(props) {
         super(props)
@@ -102,7 +172,7 @@
         }
 
         toggleHide(evt) {
-          this.props.select(this.props.id)
+          store.dispatch(setPage(this.props.id))
           this.setState({
             visible:!this.state.visible
           })
@@ -197,89 +267,58 @@
           <div>
             <canvas ref="canvas" width={400} height={225} />
             <br/>
-            <button onClick={evt => this.props.incrementTarget()}>Increment Target</button>
+            <button onClick={evt =>store.dispatch(increaseTarget(data.id))}>Increment Target</button>
             Target has been incremented by: {this.props.incremented}
           </div>
         )
       }
     }
 
+    /////////// APP
     class App extends React.Component {
-      constructor(props){
-        super(props);
-        this.state = {
-          data: null,
-          today: null,
-          cardNbr: 1
-        }
-      }
-
-      componentDidMount() {
-        const data = OBJECTIVES
-        const today = TODAY
-        data.forEach(dataSet => {
-          dataSet.originTarget = dataSet.target
-        })
-        this.setState({
-          data: data,
-          today: today
-        })
-      }
-
-      setCardNbr(nbr) {
-        this.setState({
-          cardNbr: nbr
-        })
-      }
-
-      incrementTarget() {
-        const {data} = this.state
-        let dataSet = null
-        if (data) {
-            dataSet = data.find(dataSet => dataSet.id === this.state.cardNbr)
-        }
-        dataSet.target += 1
-        this.setState({
-          data: data
-        })
-      }
-
       render() {
-        const {data} = this.state
+        const {data, pageNbr, today} = this.props
         let dataSet = null
         let incremented = 0
         let overTarget = 0
         if (data) {
-            dataSet = data.find(dataSet => dataSet.id === this.state.cardNbr)
+            dataSet = data.find(dataSet => dataSet.id === pageNbr)
             incremented = dataSet.target - dataSet.originTarget
             data.forEach(dataSet => {
               if (dataSet.current > dataSet.target) overTarget += 1
             })
         }
-
         return(
           <div id="app">
-            <SideMenu
-              changeCardTo={(nbr) => this.setCardNbr(nbr)}
-              selectedNbr={this.state.cardNbr}
-            />
+            <SideMenu />
             <div id="app_body">
+              <button onClick={evt => store.dispatch(increaseRandomTarget())}>Increment random target</button>
               {data && <Results overTarget={overTarget}/>}
               {dataSet && <Page  key={dataSet.id}
                                           id={dataSet.id}
                                           data={dataSet}
-                                          today={this.state.today}
-                                          incrementTarget={evt => this.incrementTarget()}
+                                          today={today}
                                           incremented={incremented}
                                           />}
             </div>
           </div>
         )
-      }
+      }  
     }
-      
+
+    const AppConnected = connect(
+      state => ({
+        data: state.data, 
+        pageNbr: state.pageNbr,
+        today: state.today
+      })
+    )(App)
+
+    /////////// DOM RENDER
     ReactDOM.render(
-      <App/>,
+      <Provider store={store}>
+        <AppConnected />
+      </Provider>,
       document.getElementById('root')
     );
   </script>
