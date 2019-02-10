@@ -5,11 +5,20 @@ body {
 		sans-serif;
 }
 
-/* ul {
-	margin: 0;
-	padding: 0;
-	padding-left: 20px;
-} */
+button {
+	color: white;
+	background-color: rgb(219, 161, 0);
+	border: 2px solid rgb(219, 161, 0);
+	border-radius: 3px;
+	font-size: 1rem;
+	margin-right: 10px;
+	padding: 5px;
+}
+
+button:active {
+	color: rgb(219, 161, 0);
+	background-color: white;
+}
 
 #app {
 	height: 100vh;
@@ -68,4 +77,8 @@ body {
 	border-left: 8px solid transparent;
 	border-right: 8px solid transparent;
 	border-top: 8px solid white;
+}
+
+.hidden {
+	display: none;
 }
