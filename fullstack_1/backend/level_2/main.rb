@@ -14,6 +14,7 @@ end
 class Objective
     def initialize(id, start, target, start_date, end_date)
         @id, @start, @target, @start_date, @end_date = id, start, target, start_date, end_date
+        @error = [] # if there is an error in any method, add it here
     end
 
     def getId
