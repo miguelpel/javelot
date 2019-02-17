@@ -34,7 +34,7 @@ class Objective
         end
         @milestones = []
         @children = []
-        @error = [] # if there is an error in any method, add it here
+        @error = nil # if there is an error in any method, add it here
     end
 
     def getId
@@ -185,13 +185,23 @@ class Objective
         return theoretical_mean
     end
 
-    def getExcess(value, date)
+    def getExcess(value, date, process_id)
+        if (date - getStart_date).to_i < 0 || (getEnd_date - date).to_i < 0
+            @error = ArgumentError.new('Date of process record with id: ' + process_id.to_s + ' outside of scope.')
+        end
         mean_start = getStart
-        mean_Target = getTarget
+        mean_target = getTarget
+        if value < [mean_start, mean_target].sort[0] || value > [mean_start, mean_target].sort { |a, b| b <=> a}[0]
+            @error = ArgumentError.new('Value of process record with id: ' + process_id.to_s + ' outside of scope.')
+        end
         theoretical_mean = getTheoreticalMeanAt(date)
         decimal_difference_mean = ((value - mean_start) / (theoretical_mean - mean_start)).round(2) - 1
         percentage_difference_mean = (decimal_difference_mean * 100).round
-        return percentage_difference_mean
+        if @error
+            raise @error
+        else
+            return percentage_difference_mean
+        end
     end
 
     def getMilestoneJustBefore(date)
@@ -268,7 +278,7 @@ objectives.each { |objective|
                 if progress
                     value = progress["value"]
                     date = Date.parse(progress["date"])
-                    output_progress_records.push({"id": progress["id"], "excess": objective.getExcess(value, date)})
+                    output_progress_records.push({"id": progress["id"], "excess": objective.getExcess(value, date, progress["id"])})
                 end
             }
 
